@@ -1,84 +1,86 @@
 # React Native + Supabase project
 
-This workspace now includes a local Supabase project scaffold with starter tables for:
-- user profiles
-- feature flags
-- feature flag events
+A fully local-first stack demonstrating qualification-based feature flags:
 
-## Local setup
-1. Install Docker Desktop and start it.
-2. Run `supabase start`.
-3. Run `supabase db push`.
-4. Copy `.env.example` to `.env.local` and fill in the generated local values.
+- **`supabase/`** — local Postgres schema (`profiles`, `feature_flags`) with
+  row-level security so that beta/premium feature flags are only readable by
+  users qualified for them. Enforced at the database layer, not the app.
+- **`api/`** — Vercel serverless functions that are the *only* surface the
+  mobile app talks to. `api/auth/login.ts`, `refresh.ts`, and `logout.ts`
+  forward to Supabase Auth server-side; `api/config.ts` forwards the
+  caller's own access token to PostgREST, so RLS still applies. Supabase's
+  URL and anon key live only in this layer's environment — the mobile app
+  never holds them.
+- **`mobile/`** — a minimal Expo (React Native) app: email/password login,
+  securely persisted session, and a home screen that renders whatever flags
+  `/api/config` returns for the signed-in user. Switches between
+  staging/production config via env files. See `mobile/README.md`.
 
-## Remote Supabase setup
-1. Run `supabase login`.
-2. Create or link a Supabase project:
-   - `supabase projects create <project-name>`
-   - or `supabase link --project-ref <project-ref>`
-3. Push migrations with `supabase db push`.
+Everything runs locally via the Supabase CLI + `vercel dev` — no cloud
+resources are provisioned.
 
-## Vercel connection
-
-✅ **Project linked:** `react-native-supabase-project`
-
-### Add Supabase environment variables to Vercel
-
-1. Get your Supabase credentials:
-   ```bash
-   supabase status -o env
-   ```
-   This outputs environment variables like `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-
-2. Add them to Vercel (choose one method):
-
-   **Option A: Using Vercel CLI**
-   ```bash
-   vercel env add NEXT_PUBLIC_SUPABASE_URL
-   vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
-   vercel env add SUPABASE_SERVICE_ROLE_KEY
-   ```
-
-   **Option B: Using Vercel Dashboard**
-   - Go to https://vercel.com/dashboard
-   - Select the `react-native-supabase-project` project
-   - Click **Settings** → **Environment Variables**
-   - Add each variable for **Production**, **Preview**, and **Development** environments
-
-3. Redeploy:
-   ```bash
-   vercel deploy --prod
-   ```
-
-## Migrations and seeding
-
-Run migrations locally with the Supabase CLI (recommended):
+## 1. Local Supabase
 
 ```bash
-# start local Supabase (Docker required)
-supabase start
-
-# push migrations
-supabase db push
-
-# apply seed migration (if using supabase CLI, migrations include seed files)
-supabase db reset --skip-db
-supabase db push
+supabase start          # requires Docker Desktop running
+supabase db reset       # applies migrations + supabase/seed.sql
+supabase status         # prints local URLs + anon/service_role keys
 ```
 
-If you don't have the Supabase CLI, you can run the SQL files directly against a Postgres instance.
+This creates three demo users (password `Password123!` for all):
 
-Example using Docker Postgres and `psql`:
+| email             | is_beta_qualified | is_premium_qualified |
+|-------------------|--------------------|------------------------|
+| free@demo.dev     | false              | false                  |
+| beta@demo.dev     | true               | false                  |
+| premium@demo.dev  | true               | true                   |
+
+And four feature flags (`audience` = `all` / `beta` / `premium`, plus one
+disabled flag to demonstrate the `enabled` kill switch):
+`new_dashboard` (all), `beta_chat` (beta), `premium_reports` (premium),
+`legacy_experiment` (all, disabled).
+
+The `feature_flags_select_for_qualified_users` RLS policy on
+`public.feature_flags` (see `supabase/migrations/`) is what actually
+enforces this — an anonymous request gets zero rows, and an authenticated
+user only sees flags whose audience they qualify for.
+
+## 2. Vercel API
 
 ```bash
-# run Postgres container
-docker run --name supabase-dev -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:15
-
-# apply migration file (replace connection params as needed)
-psql "postgresql://postgres:postgres@localhost:5432/postgres" -f supabase/migrations/20260629120000_init_user_tracking_and_feature_flags.sql
-psql "postgresql://postgres:postgres@localhost:5432/postgres" -f supabase/migrations/20260629121000_seed_demo_data.sql
+cp .env.example .env
+# fill in SUPABASE_ANON_KEY from `supabase status`
+npm install
+npx vercel dev            # defaults to http://localhost:3000
 ```
 
-Notes:
-- The `profiles` table references `auth.users(id)` from Supabase Auth; inserting demo profiles may fail unless the `auth` schema/user rows exist. Replace placeholder `<USER_ID>` in seed files with a valid auth user id or skip profile insertion.
-- If you want me to run migrations locally, ensure `supabase`, `psql`, or Docker are installed and let me proceed.
+- `POST /api/auth/login` — `{ email, password }` → `{ accessToken, refreshToken, expiresAt, user }`
+- `POST /api/auth/refresh` — `{ refreshToken }` → same shape, with fresh tokens
+- `POST /api/auth/logout` — `Authorization: Bearer <accessToken>` → revokes the refresh token server-side
+- `GET /api/config` — `Authorization: Bearer <accessToken>` → `{ environment, profile, featureFlags }`, filtered by RLS for that user
+
+All four forward to Supabase (Auth or PostgREST) using only the anon key,
+scoped to the caller's own token — never the service role key. The mobile
+app only ever calls this API; it has no Supabase URL or anon key at all.
+
+To exercise the flow manually:
+
+```bash
+curl -s -X POST "http://localhost:3000/api/auth/login" -H "Content-Type: application/json" \
+  -d '{"email":"beta@demo.dev","password":"Password123!"}'
+# -> { accessToken, refreshToken, expiresAt, user }
+
+curl -s "http://localhost:3000/api/config" -H "Authorization: Bearer <accessToken>"
+```
+
+## 3. Mobile app
+
+See `mobile/README.md` — covers the staging/production env toggle, running
+the app, demo credentials, and the Maestro E2E flow.
+
+## Remote Supabase / Vercel (optional, not required by this assessment)
+
+1. `supabase login`, then `supabase link --project-ref <project-ref>`.
+2. `supabase db push` to apply migrations to a real project.
+3. Add `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` to
+   Vercel (`vercel env add ...`) and `vercel deploy --prod`.

@@ -1,0 +1,30 @@
+appId: dev.demo.rnsupabaseassessment
+---
+# Demonstrates the critical user flow end-to-end: log in as a beta-qualified
+# (but not premium-qualified) demo user and assert the UI only shows the
+# feature flags that the backend's RLS policy actually returns for that
+# user — proving the UI is driven by the DB-enforced qualification, not a
+# hardcoded list.
+- launchApp
+- tapOn:
+    id: 'login-email'
+- inputText: 'beta@demo.dev'
+- tapOn:
+    id: 'login-password'
+- inputText: 'Password123!'
+- tapOn:
+    id: 'login-submit'
+- assertVisible:
+    id: 'profile-email'
+- assertVisible:
+    id: 'flag-new_dashboard'
+- assertVisible:
+    id: 'flag-beta_chat'
+- assertNotVisible:
+    id: 'flag-premium_reports'
+- assertNotVisible:
+    id: 'flag-legacy_experiment'
+- tapOn:
+    id: 'sign-out'
+- assertVisible:
+    id: 'login-submit'

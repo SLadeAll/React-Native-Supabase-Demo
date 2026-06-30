@@ -1,0 +1,13 @@
+{
+  "name": "react-native-supabase-project-api",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Vercel API routes serving Supabase-backed config to the mobile client.",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.2.0",
+    "typescript": "^5.5.4"
+  }
+}

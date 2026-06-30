@@ -1,0 +1,17 @@
+.vercel
+
+# Local secrets only — .env.example and mobile/.env.staging|.env.production
+# are intentionally tracked (no real secrets, just local dev defaults).
+.env
+.env.local
+.env.*.local
+
+# dependencies
+node_modules/
+
+# editor/tooling local state
+.history/
+
+# Supabase CLI local runtime state (not project config)
+supabase/.branches/
+supabase/.temp/
