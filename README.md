@@ -19,9 +19,36 @@ This workspace now includes a local Supabase project scaffold with starter table
 3. Push migrations with `supabase db push`.
 
 ## Vercel connection
-1. Run `vercel login`.
-2. Run `vercel link` inside this folder.
-3. Add the Supabase env vars to Vercel.
+
+✅ **Project linked:** `react-native-supabase-project`
+
+### Add Supabase environment variables to Vercel
+
+1. Get your Supabase credentials:
+   ```bash
+   supabase status -o env
+   ```
+   This outputs environment variables like `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+
+2. Add them to Vercel (choose one method):
+
+   **Option A: Using Vercel CLI**
+   ```bash
+   vercel env add NEXT_PUBLIC_SUPABASE_URL
+   vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+   vercel env add SUPABASE_SERVICE_ROLE_KEY
+   ```
+
+   **Option B: Using Vercel Dashboard**
+   - Go to https://vercel.com/dashboard
+   - Select the `react-native-supabase-project` project
+   - Click **Settings** → **Environment Variables**
+   - Add each variable for **Production**, **Preview**, and **Development** environments
+
+3. Redeploy:
+   ```bash
+   vercel deploy --prod
+   ```
 
 ## Migrations and seeding
 
