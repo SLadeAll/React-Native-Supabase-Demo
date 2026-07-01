@@ -139,6 +139,27 @@ export async function signOut() {
   }
 }
 
+export async function signUp(email: string, password: string): Promise<void> {
+  const data = await postJson('/api/auth/register', { email, password });
+  await setSession(toSession(data));
+}
+
+export async function changePassword(newPassword: string): Promise<void> {
+  if (!currentSession) throw new Error('Not signed in');
+  const response = await loggedFetch(`${apiBaseUrl}/api/auth/change-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${currentSession.accessToken}`,
+    },
+    body: JSON.stringify({ password: newPassword }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error ?? 'Failed to change password');
+  }
+}
+
 AppState.addEventListener('change', (state: AppStateStatus) => {
   if (state === 'active' && currentSession) {
     scheduleRefresh(currentSession);
