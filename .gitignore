@@ -1,10 +1,10 @@
 .vercel
 
-# Local secrets only — .env.example and mobile/.env.staging|.env.production
-# are intentionally tracked (no real secrets, just local dev defaults).
+# Local secrets only — .env.example is intentionally tracked as a template.
 .env
 .env.local
-.env.*.local
+.env.*
+!.env.example
 
 # dependencies
 node_modules/
