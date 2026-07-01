@@ -1,4 +1,4 @@
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 
 const SKILLS: string[] = [
   'React Native',
@@ -31,18 +31,21 @@ export default function AboutScreen() {
       {/* Profile card */}
       <View className="bg-white rounded-2xl border border-gray-100 p-6 items-center mb-5">
         {/* Avatar */}
-        <View className="w-20 h-20 rounded-full bg-violet-600 items-center justify-center mb-4">
-          <Text className="text-white text-3xl font-bold">YN</Text>
-        </View>
+        <Image
+          source={{ uri: 'https://avatars.githubusercontent.com/u/43075858?s=400&u=3199874c55e0396196b090d7f0245c704da5c686&v=4' }}
+          className="w-20 h-20 rounded-full mb-4"
+        />
 
         {/* Name & role */}
         <Text className="text-xl font-bold text-gray-900 mb-1">Oscar Vera</Text>
         <Text className="text-violet-600 font-semibold text-sm mb-3">Full-Stack Developer</Text>
 
         {/* Bio */}
-        <Text className="text-gray-500 text-sm text-center leading-relaxed">
-          Add a short bio here — who you are, what you build, and what drives you as a developer.
-          This is your space to introduce yourself to anyone who views your app.
+        <Text className="text-gray-500 text-sm text-center leading-relaxed">Software Engineer with 4+ years of experience building scalable web and mobile applications using React, React Native,
+Vue.js, Node.js, and PHP. Proven track record delivering front-end and full-stack solutions across agile teams at companies
+including Tata Consultancy Services, HMH Sistemas, and IA Interactive. Experienced integrating AI/LLM tools into
+development workflows to accelerate delivery. Strong background in REST API design, CI/CD pipelines, Docker, and cloud
+deployments. Fluent in English and Spanish; effective communicator with international client-facing experience.
         </Text>
       </View>
 
