@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "description": "Vercel API routes serving Supabase-backed config to the mobile client.",
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4",
-    "expo": "^57.0.1"
+    "@supabase/supabase-js": "^2.45.4"
   },
   "devDependencies": {
     "@vercel/node": "^3.2.0",

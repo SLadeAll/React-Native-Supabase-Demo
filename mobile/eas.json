@@ -4,18 +4,28 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "demo": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_API_BASE_URL": "https://react-native-supabase-project.vercel.app"
+      }
+    },
     "staging": {
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
-        "EXPO_PUBLIC_API_BASE_URL": "http://10.0.2.2:3000"
+        "EXPO_PUBLIC_API_BASE_URL": "https://react-native-supabase-project.vercel.app"
       }
     },
     "production": {
       "distribution": "store",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
-        "EXPO_PUBLIC_API_BASE_URL": "http://10.0.2.2:3000"
+        "EXPO_PUBLIC_API_BASE_URL": "https://react-native-supabase-project.vercel.app"
       }
     }
   },

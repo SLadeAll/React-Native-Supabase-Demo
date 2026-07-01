@@ -1,26 +1,16 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { appEnv } from '../lib/config';
 
 export default function EnvBadge() {
   const isProduction = appEnv === 'production';
   return (
-    <View testID="env-badge" style={[styles.badge, isProduction ? styles.production : styles.staging]}>
-      <Text style={styles.text}>{appEnv.toUpperCase()}</Text>
+    <View
+      testID="env-badge"
+      className={`absolute top-3 right-4 px-2.5 py-1 rounded-xl z-10 ${
+        isProduction ? 'bg-green-600' : 'bg-amber-500'
+      }`}
+    >
+      <Text className="text-white font-bold text-xs">{appEnv.toUpperCase()}</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    position: 'absolute',
-    top: 12,
-    right: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    zIndex: 10,
-  },
-  staging: { backgroundColor: '#f59e0b' },
-  production: { backgroundColor: '#16a34a' },
-  text: { color: '#fff', fontWeight: '700', fontSize: 12 },
-});
