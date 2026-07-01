@@ -23,6 +23,30 @@ create table if not exists public.feature_flags (
   updated_at timestamptz not null default now()
 );
 
+-- Add columns if the tables were created by older migrations without them.
+do $$ begin
+  alter table public.profiles add column is_beta_qualified boolean not null default false;
+exception when duplicate_column then null; end $$;
+do $$ begin
+  alter table public.profiles add column is_premium_qualified boolean not null default false;
+exception when duplicate_column then null; end $$;
+-- Older migrations may have added a redundant user_id column; make it nullable so
+-- our trigger (which only inserts id + email) doesn't violate the constraint.
+do $$ begin
+  alter table public.profiles alter column user_id drop not null;
+exception when undefined_column then null; end $$;
+do $$ begin
+  alter table public.feature_flags add column name text not null default '';
+exception when duplicate_column then null; end $$;
+do $$ begin
+  alter table public.feature_flags add column description text;
+exception when duplicate_column then null; end $$;
+do $$ begin
+  alter table public.feature_flags
+    add column audience text not null default 'all'
+    check (audience in ('all', 'beta', 'premium'));
+exception when duplicate_column then null; end $$;
+
 create or replace function public.handle_updated_at()
 returns trigger as $$
 begin
@@ -31,10 +55,12 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists profiles_set_updated_at on public.profiles;
 create trigger profiles_set_updated_at
 before update on public.profiles
 for each row execute procedure public.handle_updated_at();
 
+drop trigger if exists feature_flags_set_updated_at on public.feature_flags;
 create trigger feature_flags_set_updated_at
 before update on public.feature_flags
 for each row execute procedure public.handle_updated_at();
@@ -58,20 +84,25 @@ for each row execute procedure public.handle_new_user();
 alter table public.profiles enable row level security;
 alter table public.feature_flags enable row level security;
 
-create policy "profiles_select_own"
-  on public.profiles for select
-  using (auth.uid() = id);
+do $$ begin
+  create policy "profiles_select_own"
+    on public.profiles for select
+    using (auth.uid() = id);
+exception when duplicate_object then null; end $$;
 
-create policy "profiles_update_own"
-  on public.profiles for update
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+do $$ begin
+  create policy "profiles_update_own"
+    on public.profiles for update
+    using (auth.uid() = id)
+    with check (auth.uid() = id);
+exception when duplicate_object then null; end $$;
 
 -- No insert/delete policy for authenticated/anon: profiles are only ever
 -- created by the handle_new_user trigger (runs as table owner, bypasses RLS).
 
 -- Anyone unauthenticated gets zero rows. Authenticated users only see flags
 -- that are enabled and whose audience they qualify for.
+do $$ begin
 create policy "feature_flags_select_for_qualified_users"
   on public.feature_flags for select
   using (
@@ -95,6 +126,7 @@ create policy "feature_flags_select_for_qualified_users"
       )
     )
   );
+exception when duplicate_object then null; end $$;
 
 -- No insert/update/delete policy for authenticated/anon: only service_role
 -- (which bypasses RLS) manages feature flags.
